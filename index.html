@@ -12,6 +12,9 @@
             --success-bg: #f0fdf4;
             --success-border: #86efac;
             --success-text: #166534;
+            --warning-bg: #fefce8;
+            --warning-border: #fde047;
+            --warning-text: #854d0e;
             --danger-bg: #fef2f2;
             --danger-border: #fca5a5;
             --danger-text: #991b1b;
@@ -79,21 +82,11 @@
             transition: all 0.2s ease;
             margin-bottom: 12px;
         }
-        .btn-danger {
-            background: #ef4444;
-            color: white;
-        }
-        .btn-danger:hover {
-            background: #dc2626;
-        }
-        .btn-primary {
-            background: #0ea5e9;
-            color: white;
-        }
-        .btn-primary:hover {
-            background: #0284c7;
-        }
-        /* Kartu Hasil Scan Modern */
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-primary { background: #0ea5e9; color: white; }
+        .btn-primary:hover { background: #0284c7; }
+
         .result-card {
             display: none;
             border-radius: 12px;
@@ -102,19 +95,13 @@
             animation: fadeIn 0.3s ease-in-out;
             text-align: center;
         }
-        .result-card.success {
-            background: var(--success-bg);
-            border: 2px solid var(--success-border);
-            color: var(--success-text);
-        }
-        .result-card.danger {
-            background: var(--danger-bg);
-            border: 2px solid var(--danger-border);
-            color: var(--danger-text);
-        }
+        .result-card.success { background: var(--success-bg); border: 2px solid var(--success-border); color: var(--success-text); }
+        .result-card.warning { background: var(--warning-bg); border: 2px solid var(--warning-border); color: var(--warning-text); }
+        .result-card.danger { background: var(--danger-bg); border: 2px solid var(--danger-border); color: var(--danger-text); }
+
         .dept-logo {
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             object-fit: contain;
             margin-bottom: 10px;
             border-radius: 50%;
@@ -122,29 +109,11 @@
             padding: 4px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        .student-name {
-            font-size: 22px;
-            font-weight: bold;
-            margin: 5px 0;
-        }
-        .student-class {
-            font-size: 15px;
-            font-weight: 600;
-            opacity: 0.9;
-            margin-bottom: 8px;
-        }
-        .status-badge {
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: 1px;
-            margin: 12px 0;
-            text-transform: uppercase;
-        }
-        .scan-time {
-            font-size: 14px;
-            opacity: 0.8;
-            font-family: monospace;
-        }
+        .student-name { font-size: 22px; font-weight: bold; margin: 5px 0; }
+        .student-class { font-size: 15px; font-weight: 600; opacity: 0.9; margin-bottom: 4px; }
+        .mapel-info { font-size: 13px; font-style: italic; opacity: 0.8; margin-bottom: 8px; }
+        .status-badge { font-size: 20px; font-weight: 800; letter-spacing: 1px; margin: 12px 0; text-transform: uppercase; }
+        .scan-time { font-size: 14px; opacity: 0.8; font-family: monospace; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: translateY(0); }
@@ -166,11 +135,11 @@
 
         <button id="toggleBtn" class="btn btn-primary" onclick="toggleCamera()">Mulai Kamera Scanner</button>
 
-        <!-- Kartu Hasil Scan -->
         <div id="resultCard" class="result-card">
             <img id="deptLogo" class="dept-logo" src="" alt="Logo Jurusan">
             <div id="resName" class="student-name">NAMA SISWA</div>
             <div id="resClass" class="student-class">KELAS / JURUSAN</div>
+            <div id="resMapel" class="mapel-info">MAPEL</div>
             <div id="resStatus" class="status-badge">HADIR</div>
             <div id="resTime" class="scan-time">00:00:00</div>
         </div>
@@ -186,22 +155,29 @@
         let scanning = false;
         let streamActive = null;
 
-        // Daftar Logo Otomatis berdasarkan Jurusan (bisa diganti dengan URL gambar logo resmi Anda)
+        // DATABASE JADWAL SESUAI GOOGLE SHEETS ANDA
+        const dbJadwal = [
+            { hari: "Senin", kelas: "XI TKJ", mapel: "PKK", masuk: "08.30", hadir: "08.50", alpa: "09.10" },
+            { hari: "Senin", kelas: "X TKJ", mapel: "DDTKJ", masuk: "13.50", hadir: "14.10", alpa: "14.30" },
+            { hari: "Selasa", kelas: "XI TKJ", mapel: "PKK", masuk: "07.40", hadir: "08.00", alpa: "08.20" },
+            { hari: "Selasa", kelas: "X TSM", mapel: "Informatika", masuk: "13.50", hadir: "14.10", alpa: "14.30" },
+            { hari: "Rabu", kelas: "X TKR", mapel: "Informatika", masuk: "09.00", hadir: "14.10", alpa: "14.30" },
+            { hari: "Kamis", kelas: "XI TKJ", mapel: "Pemrograman", masuk: "07.50", hadir: "08.10", alpa: "08.30" },
+            { hari: "Kamis", kelas: "X TSM", mapel: "Informatika", masuk: "11.00", hadir: "11.20", alpa: "11.40" }
+        ];
+
+        // LOGO JURUSAN (TSM = Motor, TKR = Mobil, dll)
         const logoMap = {
-            "TSM": "https://cdn-icons-png.flaticon.com/512/3063/3063823.png", // Ganti link logo TSM
-            "TKR": "https://cdn-icons-png.flaticon.com/512/1995/1995574.png", // Ganti link logo TKR
-            "TKJ": "https://cdn-icons-png.flaticon.com/512/1006/1006771.png", // Ganti link logo TKJ
-            "PERBANKAN": "https://cdn-icons-png.flaticon.com/512/2830/2830284.png", // Ganti link Perbankan
-            "APHP": "https://cdn-icons-png.flaticon.com/512/3076/3076897.png", // Ganti link APHP/LA
+            "TSM": "https://cdn-icons-png.flaticon.com/512/3063/3063823.png", 
+            "TKR": "https://cdn-icons-png.flaticon.com/512/1995/1995574.png", 
+            "TKJ": "https://cdn-icons-png.flaticon.com/512/1006/1006771.png", 
+            "PERBANKAN": "https://cdn-icons-png.flaticon.com/512/2830/2830284.png", 
+            "APHP": "https://cdn-icons-png.flaticon.com/512/3076/3076897.png", 
             "DEFAULT": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
         };
 
         function toggleCamera() {
-            if (scanning) {
-                stopCamera();
-            } else {
-                startCamera();
-            }
+            if (scanning) { stopCamera(); } else { startCamera(); }
         }
 
         function startCamera() {
@@ -216,15 +192,11 @@
                     toggleBtn.className = "btn btn-danger";
                     requestAnimationFrame(tick);
                 })
-                .catch(function(err) {
-                    alert("Gagal mengakses kamera: " + err);
-                });
+                .catch(function(err) { alert("Gagal mengakses kamera: " + err); });
         }
 
         function stopCamera() {
-            if (streamActive) {
-                streamActive.getTracks().forEach(track => track.stop());
-            }
+            if (streamActive) { streamActive.getTracks().forEach(track => track.stop()); }
             scanning = false;
             toggleBtn.innerText = "Mulai Kamera Scanner";
             toggleBtn.className = "btn btn-primary";
@@ -232,38 +204,68 @@
 
         function tick() {
             if (!scanning) return;
-
             if (video.readyState === video.HAVE_ENOUGH_DATA) {
                 canvasElement.height = video.videoHeight;
                 canvasElement.width = video.videoWidth;
                 canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
                 var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-                var code = jsQR(imageData.data, imageData.width, imageData.height, {
-                    inversionAttempts: "dontInvert",
-                });
+                var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
 
                 if (code) {
                     handleScanResult(code.data);
-                    // Berhenti sejenak setelah scan sukses agar tidak double-scan
                     stopCamera();
-                    setTimeout(startCamera, 4000); // Kamera aktif lagi setelah 4 detik
+                    setTimeout(startCamera, 4000);
                 }
             }
             requestAnimationFrame(tick);
         }
 
-        function handleScanResult(dataText) {
-            // Contoh format data QR code: "Abdul Faiz|X TSM|TERLAMBAT" atau disesuaikan
-            let parts = dataText.split("|");
-            let nama = parts[0] || "Siswa Teladan";
-            let kelasJurusan = parts[1] || "X TSM";
-            let status = parts[2] || "HADIR";
-            
-            let now = new Date();
-            let timeString = now.toLocaleTimeString();
+        function timeToMinutes(timeStr) {
+            let parts = timeStr.replace('.', ':').split(':');
+            return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        }
 
-            // Deteksi Jurusan untuk Logo Otomatis
-            let upperJK = kelasJurusan.toUpperCase();
+        function handleScanResult(dataText) {
+            let parts = dataText.split("|");
+            let idSiswa = parts[0] || "LAB093";
+            let kelasSiswa = parts[1] || "X TSM"; // Contoh: "X TSM" atau "XI TKJ"
+
+            let now = new Date();
+            let timeString = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            let currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+            // Deteksi Hari Ini (Bahasa Indonesia)
+            const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+            let hariIni = days[now.getDay()];
+
+            // Cari jadwal berdasarkan Hari & Kelas Siswa
+            let jadwalHariIni = dbJadwal.find(j => j.hari.toLowerCase() === hariIni.toLowerCase() && kelasSiswa.toUpperCase().includes(j.kelas.toUpperCase()));
+
+            let statusAbsen = "HADIR";
+            let cardClass = "result-card success";
+            let mapelInfo = "Mata Pelajaran Lab Komputer";
+
+            if (jadwalHariIni) {
+                mapelInfo = "Mapel: " + jadwalHariIni.mapel;
+                let mBatasHadir = timeToMinutes(jadwalHariIni.hadir);
+                let mBatasAlpa = timeToMinutes(jadwalHariIni.alpa);
+
+                if (currentMinutes <= mBatasHadir) {
+                    statusAbsen = "HADIR";
+                    cardClass = "result-card success";
+                } else if (currentMinutes > mBatasHadir && currentMinutes <= mBatasAlpa) {
+                    statusAbsen = "TERLAMBAT";
+                    cardClass = "result-card warning";
+                } else {
+                    statusAbsen = "ALPA (TERLALU TELAT)";
+                    cardClass = "result-card danger";
+                }
+            } else {
+                mapelInfo = "Diluar Jadwal Reguler Hari Ini";
+            }
+
+            // Deteksi Logo Jurusan Otomatis
+            let upperJK = kelasSiswa.toUpperCase();
             let selectedLogo = logoMap["DEFAULT"];
             if (upperJK.includes("TSM")) selectedLogo = logoMap["TSM"];
             else if (upperJK.includes("TKR")) selectedLogo = logoMap["TKR"];
@@ -271,17 +273,15 @@
             else if (upperJK.includes("PERBANKAN")) selectedLogo = logoMap["PERBANKAN"];
             else if (upperJK.includes("APHP") || upperJK.includes("LA")) selectedLogo = logoMap["APHP"];
 
-            // Render ke Kartu Tampilan
+            // Render ke UI Kartu
             document.getElementById("deptLogo").src = selectedLogo;
-            document.getElementById("resName").innerText = nama;
-            document.getElementById("resClass").innerText = kelasJurusan;
-            document.getElementById("resStatus").innerText = status;
-            document.getElementById("resTime").innerText = timeString;
+            document.getElementById("resName").innerText = idSiswa;
+            document.getElementById("resClass").innerText = kelasSiswa;
+            document.getElementById("resMapel").innerText = mapelInfo;
+            document.getElementById("resStatus").innerText = statusAbsen;
+            document.getElementById("resTime").innerText = "Waktu Scan: " + timeString;
 
-            resultCard.className = "result-card success";
-            if (status.toUpperCase().includes("TERLAMBAT") || status.toUpperCase().includes("ALPHA")) {
-                resultCard.className = "result-card danger";
-            }
+            resultCard.className = cardClass;
             resultCard.style.display = "block";
         }
     </script>
