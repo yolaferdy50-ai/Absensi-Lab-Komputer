@@ -391,123 +391,93 @@ function formatJam(value) {
 // GANTI DENGAN TOKEN BOT TELEGRAM ANDA
 var BOT_TOKEN = "8543899140:AAF_OFSBRIqZrprclYDyC7AHzItvU8adQdo"; 
 
+var TELEGRAM_TOKEN = "8543899140:AAF_OFSBRIqZrprclYDyC7AHzItvU8adQdo";
+
 function doPost(e) {
-  try {
-    if (!e || !e.postData || !e.postData.contents) {
-      return responseOK();
-    }
-
-    var data = JSON.parse(e.postData.contents);
-    var updateId = data.update_id;
-
-    // 1. PENCEGAHAN SPAM (Cache 24 Jam)
-    if (updateId) {
-      var cache = CacheService.getScriptCache();
-      if (cache.get("up_" + updateId)) {
-        return responseOK(); // Abaikan jika update_id sudah pernah diproses
-      }
-      cache.put("up_" + updateId, "1", 86400); // Kunci selama 24 jam
-    }
-
-    // 2. PROSES PESAN TELEGRAM
-    if (data.message && data.message.text) {
-      var chatId = data.message.chat.id;
-      var textPesan = String(data.message.text).trim();
-
-      if (textPesan.indexOf("/start") === 0) {
-        var parts = textPesan.split(/\s+/);
-        
-        // Memastikan ada parameter deep-link (misal: /start LAB096)
-        if (parts.length > 1 && parts[1].trim() !== "" && parts[1].trim().toUpperCase() !== "START") {
-          var kodeSiswa = parts[1].trim();
-          
-          // Lakukan pencarian & penyimpanan
-          var hasil = simpanChatIdOtomatis(kodeSiswa, chatId);
-          
-          if (hasil === "BERHASIL") {
-            kirimPesanTelegram(chatId, "✅ *Pendaftaran Berhasil!*\n\nChat ID Anda (" + chatId + ") telah terhubung dengan ID Siswa: *" + kodeSiswa + "*");
-          } else if (hasil === "SUDAH_TERDAFTAR") {
-            // Sudah terdaftar sebelumnya, tidak perlu kirim balasan ulang
-          } else {
-            kirimPesanTelegram(chatId, "❌ *Pendaftaran Gagal*\n\nKode Siswa *" + kodeSiswa + "* tidak ditemukan di database.");
-          }
-        }
-      }
-      return responseOK();
-    }
-
-    // 3. PROSES SCAN QR CODE (JIKA ADA)
-    if (data.kodeQR) {
-      prosesAbsensi(String(data.kodeQR).trim());
-    }
-
-  } catch (error) {
-    Logger.log("Error doPost: " + error.message);
-  }
-
-  return responseOK();
-}
-
-function responseOK() {
-  return ContentService.createTextOutput(JSON.stringify({ status: "ok" }))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function simpanChatIdOtomatis(kodeSiswa, chatId) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheetSiswa = ss.getSheetByName("DATA_SISWA");
-    if (!sheetSiswa) return "ERROR";
+    
+    // Ambil data kiriman dari web scanner
+    var postData = JSON.parse(e.postData.contents);
+    var qrData = postData.qrData ? postData.qrData.toString().trim() : "";
+    
+    // Ambil ID Siswa (misal: "LAB041" dari format "LAB041|XI TKJ")
+    var idSiswa = qrData.split("|")[0].trim().toUpperCase();
+    
+    var namaSiswa = "Siswa";
+    var kelasSiswa = "-";
+    var chatId = "";
 
-    var data = sheetSiswa.getDataRange().getValues();
-    var targetKode = String(kodeSiswa).trim().toUpperCase();
-    var strChatId = String(chatId).trim();
-
-    // Loop mulai dari baris kedua (indeks 1) untuk melewati header
-    for (var i = 1; i < data.length; i++) {
-      var idDiSheet = String(data[i][0]).trim().toUpperCase(); // Kolom A
-      var existingChatId = String(data[i][7]).trim();          // Kolom H (Index 7)
-
-      if (idDiSheet === targetKode) {
-        // Jika sudah terdaftar dengan Chat ID yang sama
-        if (existingChatId === strChatId) {
-          return "SUDAH_TERDAFTAR";
+    // Cari data siswa di Sheet DATA_SISWA
+    if (sheetSiswa) {
+      var data = sheetSiswa.getDataRange().getValues();
+      for (var i = 1; i < data.length; i++) {
+        var idDb = data[i][0] ? data[i][0].toString().trim().toUpperCase() : "";
+        if (idDb === idSiswa) {
+          namaSiswa = data[i][1] || "Siswa";   // Kolom B: Nama
+          kelasSiswa = data[i][2] || "-";       // Kolom C: Kelas
+          chatId = data[i][7] || "";           // Kolom H: Telegram Chat ID
+          break;
         }
-
-        // KODE COCOK: Tulis Chat ID ke Kolom H (Baris i+1, Kolom 8)
-        sheetSiswa.getRange(i + 1, 8).setValue(strChatId);
-        SpreadsheetApp.flush();
-        return "BERHASIL";
       }
     }
+
+    // Tentukan Waktu & Status Kehadiran (Batas jam 08:00)
+    var now = new Date();
+    var jam = now.getHours();
+    var menit = now.getMinutes();
+    var statusAbsen = "HADIR";
+    
+    if (jam > 8 || (jam === 8 && menit > 0)) {
+      statusAbsen = "TERLAMBAT";
+    }
+
+    var tanggal = Utilities.formatDate(now, "Asia/Jakarta", "dd-MM-yyyy");
+    var waktuStr = Utilities.formatDate(now, "Asia/Jakarta", "HH:mm:ss");
+
+    // 1. Simpan Rekap ke Google Sheets (Sheet: REKAP_ABSEN)
+    var sheetAbsen = ss.getSheetByName("REKAP_ABSEN");
+    if (!sheetAbsen) {
+      sheetAbsen = ss.insertSheet("REKAP_ABSEN");
+      sheetAbsen.appendRow(["Tanggal", "Waktu", "ID Siswa", "Nama", "Kelas", "Status"]);
+    }
+    sheetAbsen.appendRow([tanggal, waktuStr, idSiswa, namaSiswa, kelasSiswa, statusAbsen]);
+
+    // 2. Kirim Notifikasi ke Telegram
+    if (chatId) {
+      var pesan = "📢 *PEMBERITAHUAN ABSENSI LAB*\n\n" +
+                  "Yth. Orang Tua/Wali dari:\n" +
+                  "👤 *" + namaSiswa + "* (" + kelasSiswa + ")\n\n" +
+                  "Status Kehadiran: *" + statusAbsen + "*\n" +
+                  "🕒 Waktu: " + waktuStr + " WIB\n" +
+                  "📍 Lokasi: Lab Komputer";
+      
+      sendTelegramMessage(chatId, pesan);
+    }
+
   } catch (err) {
-    Logger.log("Error simpanChatIdOtomatis: " + err.message);
+    console.error("Error doPost: " + err.toString());
   }
-  
-  // HANYA mengembalikan TIDAK_DITEMUKAN dan TANPA MENGISI APAPUN di sheet
-  return "TIDAK_DITEMUKAN";
+
+  return ContentService.createTextOutput("OK");
 }
 
-function kirimPesanTelegram(chatId, text) {
-  var url = "https://api.telegram.org/bot" + BOT_TOKEN + "/sendMessage";
+function sendTelegramMessage(chatId, text) {
+  var url = "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMessage";
   var payload = {
-    chat_id: String(chatId),
-    text: text,
-    parse_mode: "Markdown"
-  };
-  
-  var options = {
     method: "post",
-    contentType: "application/json",
-    payload: JSON.stringify(payload),
-    muteHttpExceptions: true
+    payload: {
+      chat_id: chatId,
+      text: text,
+      parse_mode: "Markdown"
+    }
   };
-  
-  UrlFetchApp.fetch(url, options);
-}
-
-function prosesAbsensi(kodeQR) {
-  // Fungsi penanganan absensi QR Code Anda
+  try {
+    UrlFetchApp.fetch(url, payload);
+  } catch (e) {
+    console.error("Gagal kirim Telegram: " + e.toString());
+  }
 }
 
 /**
@@ -642,4 +612,33 @@ function kirimPesanTelegram(chatId, pesan) {
   } catch (error) {
     Logger.log("Gagal mengirim Telegram: " + error.message);
   }
+}
+function doGet(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheetSiswa = ss.getSheetByName("DATA_SISWA");
+  
+  // Jika diakses dari web scanner dengan parameter ?id=LAB041
+  if (e && e.parameter && e.parameter.id) {
+    var searchId = e.parameter.id.toString().trim().toUpperCase();
+    var data = sheetSiswa.getDataRange().getValues();
+    var result = { status: "not_found" };
+    
+    for (var i = 1; i < data.length; i++) {
+      var idSiswa = data[i][0] ? data[i][0].toString().trim().toUpperCase() : ""; // Kolom A: ID Siswa
+      if (idSiswa === searchId) {
+        result = {
+          status: "success",
+          id: data[i][0],
+          nama: data[i][1] || "Siswa",   // Sesuaikan dengan kolom Nama di Spreadsheet Anda
+          kelas: data[i][2] || "X TKJ"  // Sesuaikan dengan kolom Kelas/Jurusan di Spreadsheet Anda
+        };
+        break;
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify(result))
+                         .setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  // Default response untuk webhook Telegram
+  return ContentService.createTextOutput("Bot Active");
 }
