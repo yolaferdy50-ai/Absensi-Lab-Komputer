@@ -1,276 +1,742 @@
 <!DOCTYPE html>
-<html lang="id">
+
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absensi Lab Komputer - SMK Islam Inayah Ujungbatu</title>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <style>
-        :root {
-            --primary: #0f172a;
-            --accent: #0ea5e9;
-            --success-bg: #f0fdf4;
-            --success-border: #86efac;
-            --success-text: #166534;
-            --warning-bg: #fefce8;
-            --warning-border: #fde047;
-            --warning-text: #854d0e;
-            --danger-bg: #fef2f2;
-            --danger-border: #fca5a5;
-            --danger-text: #991b1b;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            color: #f8fafc;
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .container {
-            width: 100%;
-            max-width: 500px;
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            box-sizing: border-box;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .header h1 {
-            font-size: 20px;
-            margin: 8px 0 4px 0;
-            color: #fff;
-        }
-        .header p {
-            font-size: 13px;
-            color: #94a3b8;
-            margin: 0;
-        }
-        .scanner-box {
-            position: relative;
-            width: 100%;
-            border-radius: 12px;
-            overflow: hidden;
-            background: #000;
-            aspect-ratio: 4/3;
-            margin-bottom: 16px;
-            border: 2px solid rgba(255,255,255,0.1);
-        }
-        video, canvas {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        .btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 15px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            margin-bottom: 12px;
-        }
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-danger:hover { background: #dc2626; }
-        .btn-primary { background: #0ea5e9; color: white; }
-        .btn-primary:hover { background: #0284c7; }
 
-        .result-card {
-            display: none;
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 15px;
-            animation: fadeIn 0.3s ease-in-out;
-            text-align: center;
-        }
-        .result-card.success { background: var(--success-bg); border: 2px solid var(--success-border); color: var(--success-text); }
-        .result-card.warning { background: var(--warning-bg); border: 2px solid var(--warning-border); color: var(--warning-text); }
-        .result-card.danger { background: var(--danger-bg); border: 2px solid var(--danger-border); color: var(--danger-text); }
+  <base target="_top">
 
-        .dept-logo {
-            width: 70px;
-            height: 70px;
-            object-fit: contain;
-            margin-bottom: 10px;
-            border-radius: 50%;
-            background: #fff;
-            padding: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .student-name { font-size: 22px; font-weight: bold; margin: 5px 0; }
-        .student-class { font-size: 15px; font-weight: 600; opacity: 0.9; margin-bottom: 4px; }
-        .mapel-info { font-size: 13px; font-style: italic; opacity: 0.8; margin-bottom: 8px; }
-        .status-badge { font-size: 20px; font-weight: 800; letter-spacing: 1px; margin: 12px 0; text-transform: uppercase; }
-        .scan-time { font-size: 14px; opacity: 0.8; font-family: monospace; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
+<meta name="viewport"
+     content="width=device-width, initial-scale=1">
+
+  <title>Absensi Lab Komputer</title>
+
+  <script src="https://unpkg.com/html5-qrcode"
+          type="text/javascript">
+  </script>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      width: 95%;
+      max-width: 600px;
+      background: white;
+      padding: 25px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.10);
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+    }
+
+    #status {
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      background: #e2e8f0;
+      font-weight: bold;
+      line-height: 1.6;
+    }
+
+    #reader {
+      width: 100%;
+      max-width: 500px;
+      margin: auto;
+    }
+
+    #kamera {
+      display: none;
+      margin-top: 15px;
+    }
+
+    #kamera select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      font-size: 15px;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 12px 25px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      background: #2563eb;
+      color: white;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    #hasil {
+      margin-top: 20px;
+      padding: 20px;
+      border-radius: 15px;
+      display: none;
+    }
+
+    .berhasil {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .gagal {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .nama {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .status-absen {
+      font-size: 30px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .petunjuk {
+      margin-top: 15px;
+      padding: 12px;
+      border-radius: 10px;
+      background: #f8fafc;
+      color: #475569;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+  </style>
+
 </head>
+
 <body>
 
-    <div class="container">
-        <div class="header">
-            <h1>SMK Islam Inayah Ujungbatu</h1>
-            <p>Scanner Kehadiran Absensi Lab Komputer</p>
-        </div>
+<div class="container">
 
-        <div class="scanner-box">
-            <video id="video" playsinline></video>
-            <canvas id="canvas" style="display: none;"></canvas>
-        </div>
+  <h1>ABSENSI LAB KOMPUTER</h1>
 
-        <button id="toggleBtn" class="btn btn-primary" onclick="toggleCamera()">Mulai Kamera Scanner</button>
+  <div id="status">
+    Memeriksa jadwal...
+  </div>
 
-        <div id="resultCard" class="result-card">
-            <img id="deptLogo" class="dept-logo" src="" alt="Logo Jurusan">
-            <div id="resName" class="student-name">NAMA SISWA</div>
-            <div id="resClass" class="student-class">KELAS / JURUSAN</div>
-            <div id="resMapel" class="mapel-info">MAPEL</div>
-            <div id="resStatus" class="status-badge">HADIR</div>
-            <div id="resTime" class="scan-time">00:00:00</div>
-        </div>
-    </div>
+  <!-- SCANNER QR -->
 
-    <script>
-        const video = document.getElementById("video");
-        const canvasElement = document.getElementById("canvas");
-        const canvas = canvasElement.getContext("2d");
-        const toggleBtn = document.getElementById("toggleBtn");
-        const resultCard = document.getElementById("resultCard");
-        
-        let scanning = false;
-        let streamActive = null;
+  <div id="reader"></div>
 
-        // --- DATABASE JADWAL SESUAI GOOGLE SHEETS ANDA ---
-        const dbJadwal = [
-            { hari: "Senin", kelas: "XI TKJ", mapel: "PKK", masuk: "08.30", hadir: "08.50", alpa: "09.10" },
-            { hari: "Senin", kelas: "X TKJ", mapel: "DDTKJ", masuk: "13.50", hadir: "14.10", alpa: "14.30" },
-            { hari: "Selasa", kelas: "XI TKJ", mapel: "PKK", masuk: "07.40", hadir: "08.00", alpa: "08.20" },
-            { hari: "Selasa", kelas: "X TSM", mapel: "Informatika", masuk: "13.50", hadir: "14.10", alpa: "14.30" },
-            { hari: "Rabu", kelas: "X TKR", mapel: "Informatika", masuk: "09.00", hadir: "14.10", alpa: "14.30" },
-            { hari: "Kamis", kelas: "XI TKJ", mapel: "Pemrograman", masuk: "07.50", hadir: "08.10", alpa: "08.30" },
-            { hari: "Kamis", kelas: "X TSM", mapel: "Informatika", masuk: "11.00", hadir: "11.20", alpa: "11.40" }
-        ];
+  <!-- PILIH KAMERA -->
 
-        // --- LOGO JURUSAN (TSM WAJIB MOTOR) ---
-        const logoMap = {
-            "TSM": "https://cdn-icons-png.flaticon.com/512/3063/3063823.png", // Ikon Motor (Fix)
-            "TKR": "https://cdn-icons-png.flaticon.com/512/1995/1995574.png", 
-            "TKJ": "https://cdn-icons-png.flaticon.com/512/1006/1006771.png", 
-            "PERBANKAN": "https://cdn-icons-png.flaticon.com/512/2830/2830284.png", 
-            "APHP": "https://cdn-icons-png.flaticon.com/512/3076/3076897.png", 
-            "DEFAULT": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-        };
+  <div id="kamera">
 
-        function toggleCamera() { if (scanning) { stopCamera(); } else { startCamera(); } }
+```
+<select id="pilihanKamera">
+  <option value="">Memilih kamera...</option>
+</select>
+```
 
-        function startCamera() {
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-                .then(function(stream) {
-                    streamActive = stream; video.srcObject = stream; video.setAttribute("playsinline", true); video.play();
-                    scanning = true; toggleBtn.innerText = "Hentikan Kamera"; toggleBtn.className = "btn btn-danger";
-                    requestAnimationFrame(tick);
-                }).catch(function(err) { alert("Gagal mengakses kamera: " + err); });
-        }
+  </div>
 
-        function stopCamera() {
-            if (streamActive) { streamActive.getTracks().forEach(track => track.stop()); }
-            scanning = false; toggleBtn.innerText = "Mulai Kamera Scanner"; toggleBtn.className = "btn btn-primary";
-        }
+  <!-- TOMBOL -->
 
-        function tick() {
-            if (!scanning) return;
-            if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                canvasElement.height = video.videoHeight; canvasElement.width = video.videoWidth;
-                canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-                var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-                var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
-                if (code) { handleScanResult(code.data); stopCamera(); setTimeout(startCamera, 4000); }
-            }
-            requestAnimationFrame(tick);
-        }
+<button id="tombolKamera"
+       onclick="mulaiScanner()">
 
-        function timeToMinutes(timeStr) {
-            let parts = timeStr.replace('.', ':').split(':');
-            return parseInt(parts[0]) * 60 + parseInt(parts[1]);
-        }
+```
+📷 MULAI KAMERA
+```
 
-        function handleScanResult(dataText) {
-            // Asumsi format data QR Code: "LAB093|X TSM|HADIR"
-            let parts = dataText.split("|");
-            let idSiswa = parts[0] || "LAB093";
-            let kelasSiswa = parts[1] || "X TSM";
+  </button>
 
-            let now = new Date();
-            let timeString = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            let currentMinutes = now.getHours() * 60 + now.getMinutes();
+  <div class="petunjuk">
 
-            // Deteksi Hari Ini (Bahasa Indonesia)
-            const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-            let hariIni = days[now.getDay()];
+```
+Izinkan akses kamera jika browser meminta izin.
+<br>
+Kemudian arahkan QR Code siswa ke kamera.
+```
 
-            // Cari jadwal berdasarkan Hari & Kelas Siswa
-            let jadwalHariIni = dbJadwal.find(j => j.hari.toLowerCase() === hariIni.toLowerCase() && kelasSiswa.toUpperCase().includes(j.kelas.toUpperCase()));
+  </div>
 
-            let statusAbsen = "HADIR";
-            let cardClass = "result-card success";
-            let mapelInfo = "Mata Pelajaran Lab Komputer";
+  <!-- HASIL ABSENSI -->
 
-            // --- LOGIKA STATUS BERBASIS JADWAL ---
-            if (jadwalHariIni) {
-                mapelInfo = "Mapel: " + jadwalHariIni.mapel;
-                let mBatasHadir = timeToMinutes(jadwalHariIni.hadir);
-                let mBatasAlpa = timeToMinutes(jadwalHariIni.alpa);
+  <div id="hasil"></div>
 
-                if (currentMinutes <= mBatasHadir) {
-                    statusAbsen = "HADIR";
-                    cardClass = "result-card success";
-                } else if (currentMinutes > mBatasHadir && currentMinutes <= mBatasAlpa) {
-                    statusAbsen = "TERLAMBAT";
-                    cardClass = "result-card warning"; // Kuning
-                } else {
-                    statusAbsen = "ALPA (TERLALU TELAT)";
-                    cardClass = "result-card danger"; // Merah
-                }
-            } else {
-                mapelInfo = "Diluar Jadwal Reguler Hari Ini (" + hariIni + ")";
-                // Jika diluar jadwal, status tetap "HADIR" (hijau) seperti di gambar Anda
-            }
+</div>
 
-            // --- DETEKSI LOGO JURUSAN OTOMATIS (FIX TSM) ---
-            let upperJK = kelasSiswa.toUpperCase();
-            let selectedLogo = logoMap["DEFAULT"];
-            if (upperJK.includes("TSM")) selectedLogo = logoMap["TSM"]; // Wajib Motor
-            else if (upperJK.includes("TKR")) selectedLogo = logoMap["TKR"];
-            else if (upperJK.includes("TKJ")) selectedLogo = logoMap["TKJ"];
-            else if (upperJK.includes("PERBANKAN")) selectedLogo = logoMap["PERBANKAN"];
-            else if (upperJK.includes("APHP") || upperJK.includes("LA")) selectedLogo = logoMap["APHP"];
+<script>
 
-            // Render ke UI Kartu
-            document.getElementById("deptLogo").src = selectedLogo;
-            document.getElementById("resName").innerText = idSiswa;
-            document.getElementById("resClass").innerText = kelasSiswa;
-            document.getElementById("resMapel").innerText = mapelInfo;
-            document.getElementById("resStatus").innerText = statusAbsen;
-            document.getElementById("resTime").innerText = "Waktu Scan: " + timeString;
 
-            resultCard.className = cardClass;
-            resultCard.style.display = "block";
-        }
-    </script>
+let scanner = null;
+
+let sedangMemproses = false;
+
+let kameraAktif = false;
+
+
+/**
+ * ====================================
+ * CEK JADWAL AKTIF
+ * ====================================
+ */
+
+function cekJadwal() {
+
+  google.script.run
+
+    .withSuccessHandler(function(sesi) {
+
+      const status =
+        document.getElementById("status");
+
+
+      if (sesi && sesi.aktif) {
+
+        status.innerHTML =
+
+          "🟢 ABSENSI AKTIF<br>" +
+
+          "Kelas: " +
+          sesi.kelas +
+
+          "<br>" +
+
+          "Mapel: " +
+          sesi.mapel +
+
+          "<br>" +
+
+          "Jam: " +
+          sesi.jamMasuk +
+          " - " +
+          sesi.batasAlpa;
+
+      }
+
+      else {
+
+        status.innerHTML =
+          "🔴 " +
+          (sesi && sesi.message
+            ? sesi.message
+            : "Tidak ada jadwal aktif.");
+
+      }
+
+    })
+
+    .withFailureHandler(function(error) {
+
+      document.getElementById("status")
+        .innerHTML =
+        "❌ Gagal membaca jadwal.";
+
+      console.error(error);
+
+    })
+
+    .getSesiAktif();
+
+}
+
+
+/**
+ * ====================================
+ * HASIL SCAN QR
+ * ====================================
+ */
+
+function hasilScan(kodeQR) {
+
+  if (sedangMemproses) {
+    return;
+  }
+
+
+  sedangMemproses = true;
+
+
+  document.getElementById("status")
+    .innerHTML =
+    "⏳ Memproses absensi...";
+
+
+  google.script.run
+
+    .withSuccessHandler(function(hasil) {
+
+      tampilkanHasil(hasil);
+
+
+      setTimeout(function() {
+
+        sedangMemproses = false;
+
+        cekJadwal();
+
+      }, 2500);
+
+    })
+
+
+    .withFailureHandler(function(error) {
+
+      tampilkanError(
+        "Terjadi kesalahan sistem."
+      );
+
+      console.error(error);
+
+
+      setTimeout(function() {
+
+        sedangMemproses = false;
+
+        cekJadwal();
+
+      }, 2500);
+
+    })
+
+
+    .prosesAbsensi(kodeQR);
+
+}
+
+
+/**
+ * ====================================
+ * TAMPILKAN HASIL
+ * ====================================
+ */
+
+function tampilkanHasil(hasil) {
+
+  const box =
+    document.getElementById("hasil");
+
+
+  box.style.display = "block";
+
+
+  if (hasil.success) {
+
+    box.className = "berhasil";
+
+
+    box.innerHTML =
+
+      "<div class='nama'>" +
+
+      hasil.nama +
+
+      "</div>" +
+
+      "<div>" +
+      hasil.kelas +
+      "</div>" +
+
+      "<div>" +
+      hasil.mapel +
+      "</div>" +
+
+      "<div class='status-absen'>" +
+
+      "✓ " +
+      hasil.status +
+
+      "</div>" +
+
+      "<div>" +
+      hasil.jam +
+      "</div>";
+
+  }
+
+  else {
+
+    box.className = "gagal";
+
+
+    box.innerHTML =
+
+      "<div class='status-absen'>" +
+
+      "⚠️ ABSENSI GAGAL" +
+
+      "</div>" +
+
+      "<div>" +
+
+      hasil.message +
+
+      "</div>";
+
+  }
+
+
+  setTimeout(function() {
+
+    box.style.display = "none";
+
+  }, 2500);
+
+}
+
+
+/**
+ * ====================================
+ * ERROR
+ * ====================================
+ */
+
+function tampilkanError(pesan) {
+
+  const box =
+    document.getElementById("hasil");
+
+
+  box.style.display = "block";
+
+  box.className = "gagal";
+
+
+  box.innerHTML =
+
+    "<div class='status-absen'>❌</div>" +
+
+    "<div>" +
+    pesan +
+    "</div>";
+
+
+  setTimeout(function() {
+
+    box.style.display = "none";
+
+  }, 3000);
+
+}
+
+
+/**
+ * ====================================
+ * DETEKSI KAMERA
+ * ====================================
+ */
+
+async function mulaiScanner() {
+
+  const status =
+    document.getElementById("status");
+
+  const tombol =
+    document.getElementById("tombolKamera");
+
+  const daftarKamera =
+    document.getElementById("kamera");
+
+  const pilihanKamera =
+    document.getElementById("pilihanKamera");
+
+
+  if (!navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia) {
+
+    status.innerHTML =
+      "❌ Browser tidak mendukung akses kamera.";
+
+    return;
+
+  }
+
+
+  tombol.disabled = true;
+
+  tombol.innerHTML =
+    "⏳ Meminta izin kamera...";
+
+
+  try {
+
+    /*
+     * Meminta izin kamera secara langsung.
+     */
+
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+        video: true
+      });
+
+
+    /*
+     * Setelah izin berhasil,
+     * matikan stream sementara.
+     */
+
+    stream.getTracks().forEach(function(track) {
+      track.stop();
+    });
+
+
+    /*
+     * Ambil daftar kamera.
+     */
+
+    const cameras =
+      await Html5Qrcode.getCameras();
+
+
+    if (!cameras || cameras.length === 0) {
+
+      status.innerHTML =
+        "❌ Kamera tidak ditemukan.";
+
+      tombol.disabled = false;
+
+      tombol.innerHTML =
+        "📷 COBA LAGI";
+
+      return;
+
+    }
+
+
+    /*
+     * Bersihkan pilihan kamera.
+     */
+
+    pilihanKamera.innerHTML = "";
+
+
+    cameras.forEach(function(camera, index) {
+
+      const option =
+        document.createElement("option");
+
+      option.value =
+        camera.id;
+
+      option.textContent =
+        camera.label ||
+        "Kamera " + (index + 1);
+
+      pilihanKamera.appendChild(option);
+
+    });
+
+
+    daftarKamera.style.display =
+      "block";
+
+
+    /*
+     * Gunakan kamera pertama.
+     */
+
+    await jalankanKamera(cameras[0].id);
+
+
+  }
+
+  catch (error) {
+
+  console.error("ERROR KAMERA:", error);
+
+  status.innerHTML =
+    "❌ KAMERA GAGAL DIBUKA<br><br>" +
+    "Nama Error: " +
+    (error.name || "Tidak diketahui") +
+    "<br>" +
+    "Pesan: " +
+    (error.message || error);
+
+  tombol.disabled = false;
+
+  tombol.innerHTML =
+    "📷 COBA LAGI";
+
+}
+
+}
+
+
+/**
+ * ====================================
+ * JALANKAN KAMERA
+ * ====================================
+ */
+
+async function jalankanKamera(cameraId) {
+
+  const status =
+    document.getElementById("status");
+
+  const tombol =
+    document.getElementById("tombolKamera");
+
+
+  try {
+
+    /*
+     * Jika scanner lama masih aktif,
+     * hentikan terlebih dahulu.
+     */
+
+    if (scanner) {
+
+      try {
+
+        await scanner.stop();
+
+      }
+
+      catch (e) {
+
+        console.log(
+          "Scanner sebelumnya tidak aktif."
+        );
+
+      }
+
+    }
+
+
+    scanner =
+      new Html5Qrcode("reader");
+
+
+    const konfigurasi = {
+
+      fps: 10,
+
+      qrbox: {
+        width: 250,
+        height: 250
+      }
+
+    };
+
+
+    await scanner.start(
+
+      cameraId,
+
+      konfigurasi,
+
+      function(decodedText) {
+
+        hasilScan(decodedText);
+
+      },
+
+      function(errorMessage) {
+
+        /*
+         * QR belum terbaca.
+         * Tidak perlu menampilkan error.
+         */
+
+      }
+
+    );
+
+
+    kameraAktif = true;
+
+
+    status.innerHTML =
+      "🟢 KAMERA AKTIF<br>" +
+      "Silakan arahkan QR Code ke kamera.";
+
+
+    tombol.innerHTML =
+      "📷 KAMERA AKTIF";
+
+
+    tombol.disabled = true;
+
+  }
+
+
+  catch (error) {
+
+    console.error(
+      "GAGAL MENJALANKAN KAMERA:",
+      error
+    );
+
+
+    status.innerHTML =
+      "❌ Kamera berhasil diberi izin tetapi tidak dapat dijalankan.";
+
+
+    tombol.disabled = false;
+
+    tombol.innerHTML =
+      "📷 COBA LAGI";
+
+  }
+
+}
+
+
+/**
+ * ====================================
+ * GANTI KAMERA
+ * ====================================
+ */
+
+document.getElementById("pilihanKamera")
+  .addEventListener("change", async function() {
+
+    const cameraId = this.value;
+
+
+    if (!cameraId) {
+      return;
+    }
+
+
+    await jalankanKamera(cameraId);
+
+  });
+
+
+/**
+ * ====================================
+ * MULAI APLIKASI
+ * ====================================
+ */
+
+window.onload = function() {
+
+  cekJadwal();
+
+};
+
+
+</script>
+
 </body>
 </html>
