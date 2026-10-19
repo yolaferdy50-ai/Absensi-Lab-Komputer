@@ -137,7 +137,7 @@
 
         <div id="resultCard" class="result-card">
             <img id="deptLogo" class="dept-logo" src="" alt="Logo Jurusan">
-            <div id="resName" class="student-name">NAMA SISWA</div>
+            <div id="resName" class="student-name">ID SISWA</div>
             <div id="resClass" class="student-class">KELAS / JURUSAN</div>
             <div id="resMapel" class="mapel-info">MAPEL</div>
             <div id="resStatus" class="status-badge">HADIR</div>
@@ -155,7 +155,15 @@
         let scanning = false;
         let streamActive = null;
 
-        // --- DATABASE JADWAL SESUAI GOOGLE SHEETS ANDA ---
+        // --- DATABASE CONTOH KELAS BERDASARKAN ID SISWA ---
+        // (Anda bisa menyesuaikan pemetaan ID siswa ke kelasnya di sini)
+        const databaseSiswa = {
+            "LAB041": { kelas: "XI TKJ", nama: "Siswa LAB041" },
+            "LAB093": { kelas: "X TSM", nama: "Siswa LAB093" },
+            "LAB096": { kelas: "X TKR", nama: "Siswa LAB096" }
+        };
+
+        // --- DATABASE JADWAL ---
         const dbJadwal = [
             { hari: "Senin", kelas: "XI TKJ", mapel: "PKK", masuk: "08.30", hadir: "08.50", alpa: "09.10" },
             { hari: "Senin", kelas: "X TKJ", mapel: "DDTKJ", masuk: "13.50", hadir: "14.10", alpa: "14.30" },
@@ -166,11 +174,11 @@
             { hari: "Kamis", kelas: "X TSM", mapel: "Informatika", masuk: "11.00", hadir: "11.20", alpa: "11.40" }
         ];
 
-        // --- LOGO JURUSAN (TSM WAJIB MOTOR) ---
+        // --- LOGO JURUSAN ---
         const logoMap = {
-            "TSM": "https://cdn-icons-png.flaticon.com/512/3063/3063823.png", // Ikon Motor (Fix)
-            "TKR": "https://cdn-icons-png.flaticon.com/512/1995/1995574.png", 
-            "TKJ": "https://cdn-icons-png.flaticon.com/512/1006/1006771.png", 
+            "TSM": "https://cdn-icons-png.flaticon.com/512/3063/3063823.png", // Motor
+            "TKR": "https://cdn-icons-png.flaticon.com/512/1995/1995574.png", // Mobil
+            "TKJ": "https://cdn-icons-png.flaticon.com/512/1006/1006771.png", // Jaringan/Komputer
             "PERBANKAN": "https://cdn-icons-png.flaticon.com/512/2830/2830284.png", 
             "APHP": "https://cdn-icons-png.flaticon.com/512/3076/3076897.png", 
             "DEFAULT": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
@@ -210,27 +218,27 @@
         }
 
         function handleScanResult(dataText) {
-            // Asumsi format data QR Code: "LAB093|X TSM|HADIR"
-            let parts = dataText.split("|");
-            let idSiswa = parts[0] || "LAB093";
-            let kelasSiswa = parts[1] || "X TSM";
+            // Ambil hanya ID Siswa bersih (mengabaikan teks pemisah jika ada di QR Code lama)
+            let rawData = dataText.split("|")[0].trim().toUpperCase();
+            
+            // Cocokkan dengan database lokal atau set default jika belum terdaftar
+            let dataSiswa = databaseSiswa[rawData] || { kelas: "XI TKJ", nama: rawData };
+            let idSiswa = rawData;
+            let kelasSiswa = dataSiswa.kelas;
 
             let now = new Date();
             let timeString = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             let currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-            // Deteksi Hari Ini (Bahasa Indonesia)
             const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
             let hariIni = days[now.getDay()];
 
-            // Cari jadwal berdasarkan Hari & Kelas Siswa
             let jadwalHariIni = dbJadwal.find(j => j.hari.toLowerCase() === hariIni.toLowerCase() && kelasSiswa.toUpperCase().includes(j.kelas.toUpperCase()));
 
             let statusAbsen = "HADIR";
             let cardClass = "result-card success";
             let mapelInfo = "Mata Pelajaran Lab Komputer";
 
-            // --- LOGIKA STATUS BERBASIS JADWAL ---
             if (jadwalHariIni) {
                 mapelInfo = "Mapel: " + jadwalHariIni.mapel;
                 let mBatasHadir = timeToMinutes(jadwalHariIni.hadir);
@@ -241,20 +249,19 @@
                     cardClass = "result-card success";
                 } else if (currentMinutes > mBatasHadir && currentMinutes <= mBatasAlpa) {
                     statusAbsen = "TERLAMBAT";
-                    cardClass = "result-card warning"; // Kuning
+                    cardClass = "result-card warning";
                 } else {
                     statusAbsen = "ALPA (TERLALU TELAT)";
-                    cardClass = "result-card danger"; // Merah
+                    cardClass = "result-card danger";
                 }
             } else {
                 mapelInfo = "Diluar Jadwal Reguler Hari Ini (" + hariIni + ")";
-                // Jika diluar jadwal, status tetap "HADIR" (hijau) seperti di gambar Anda
             }
 
-            // --- DETEKSI LOGO JURUSAN OTOMATIS (FIX TSM) ---
+            // DETEKSI LOGO JURUSAN BERDASARKAN KELAS (TKJ = Ikon Jaringan/Komputer)
             let upperJK = kelasSiswa.toUpperCase();
             let selectedLogo = logoMap["DEFAULT"];
-            if (upperJK.includes("TSM")) selectedLogo = logoMap["TSM"]; // Wajib Motor
+            if (upperJK.includes("TSM")) selectedLogo = logoMap["TSM"];
             else if (upperJK.includes("TKR")) selectedLogo = logoMap["TKR"];
             else if (upperJK.includes("TKJ")) selectedLogo = logoMap["TKJ"];
             else if (upperJK.includes("PERBANKAN")) selectedLogo = logoMap["PERBANKAN"];
