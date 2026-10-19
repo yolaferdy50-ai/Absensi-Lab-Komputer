@@ -75,8 +75,8 @@
         <button id="toggleBtn" class="btn btn-primary" onclick="toggleCamera()">Mulai Kamera Scanner</button>
 
         <div id="resultCard" class="result-card">
-            <h3 id="resName">ABSEN BERHASIL!</h3>
-            <p id="resDetails">Data tersimpan di sistem.</p>
+            <h3 id="resName">MEMPROSES...</h3>
+            <p id="resDetails">Menghubungkan ke server...</p>
             <p id="resTime" style="font-family: monospace; font-size: 12px; margin-top: 8px;"></p>
         </div>
     </div>
@@ -90,8 +90,9 @@
         
         let scanning = false;
         let streamActive = null;
-        let isProcessing = false; // Flag cegah ganda scan
+        let isProcessing = false;
 
+        // URL Web App Google Apps Script Anda
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzcNu-XdFsz5G9lR5zXY5Z_ABSYTlSbj6VUY_i4Utm0FEGL0zEZjlxp1ZjJ415qCyHC/exec";
 
         function toggleCamera() {
@@ -132,26 +133,38 @@
                 if (code && !isProcessing) {
                     isProcessing = true;
                     handleScanResult(code.data);
-                    
-                    // Jeda 3 detik untuk scan siswa berikutnya
-                    setTimeout(() => { isProcessing = false; }, 3000);
+                    setTimeout(() => { isProcessing = false; }, 4000); // Jeda 4 detik
                 }
             }
             requestAnimationFrame(tick);
         }
 
-        function handleScanResult(dataText) {
+        async function handleScanResult(dataText) {
             let now = new Date();
             let timeString = now.toLocaleTimeString('id-ID');
 
-            // 1. Tampilkan Hasil di Layar SANGAT CEPAT (Instan Tanpa Nunggu Server)
-            document.getElementById("resName").innerText = "ABSEN BERHASIL!";
-            document.getElementById("resDetails").innerText = "ID / Data: " + dataText;
+            document.getElementById("resName").innerText = "MEMPROSES ABSEN...";
+            document.getElementById("resDetails").innerText = "QR: " + dataText;
             document.getElementById("resTime").innerText = "Waktu: " + timeString;
             resultCard.style.display = "block";
 
-            // 2. Kirim Data ke Google Sheets & Telegram di Latar Belakang (Non-blocking)
-            navigator.sendBeacon(APPS_SCRIPT_URL, JSON.stringify({ qrData: dataText }));
+            try {
+                // Kirim data via GET agar Google Apps Script langsung merespons Nama & Kelas
+                let response = await fetch(`${APPS_SCRIPT_URL}?id=${encodeURIComponent(dataText)}`);
+                let resJson = await response.json();
+
+                if (resJson.status === "success") {
+                    document.getElementById("resName").innerText = resJson.nama;
+                    document.getElementById("resDetails").innerText = "Kelas: " + resJson.kelas + " | Status: " + resJson.absenStatus;
+                } else {
+                    document.getElementById("resName").innerText = "TIDAK TERDAFTAR";
+                    document.getElementById("resDetails").innerText = "ID: " + dataText;
+                }
+            } catch (error) {
+                console.error("Gagal koneksi:", error);
+                document.getElementById("resName").innerText = "TERCATAT";
+                document.getElementById("resDetails").innerText = "Data dikirim ke sistem.";
+            }
         }
     </script>
 </body>
