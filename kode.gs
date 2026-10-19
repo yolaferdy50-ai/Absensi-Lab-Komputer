@@ -393,92 +393,7 @@ var BOT_TOKEN = "8543899140:AAF_OFSBRIqZrprclYDyC7AHzItvU8adQdo";
 
 var TELEGRAM_TOKEN = "8543899140:AAF_OFSBRIqZrprclYDyC7AHzItvU8adQdo";
 
-function doPost(e) {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheetSiswa = ss.getSheetByName("DATA_SISWA");
-    
-    // Ambil data kiriman dari web scanner
-    var postData = JSON.parse(e.postData.contents);
-    var qrData = postData.qrData ? postData.qrData.toString().trim() : "";
-    
-    // Ambil ID Siswa (misal: "LAB041" dari format "LAB041|XI TKJ")
-    var idSiswa = qrData.split("|")[0].trim().toUpperCase();
-    
-    var namaSiswa = "Siswa";
-    var kelasSiswa = "-";
-    var chatId = "";
 
-    // Cari data siswa di Sheet DATA_SISWA
-    if (sheetSiswa) {
-      var data = sheetSiswa.getDataRange().getValues();
-      for (var i = 1; i < data.length; i++) {
-        var idDb = data[i][0] ? data[i][0].toString().trim().toUpperCase() : "";
-        if (idDb === idSiswa) {
-          namaSiswa = data[i][1] || "Siswa";   // Kolom B: Nama
-          kelasSiswa = data[i][2] || "-";       // Kolom C: Kelas
-          chatId = data[i][7] || "";           // Kolom H: Telegram Chat ID
-          break;
-        }
-      }
-    }
-
-    // Tentukan Waktu & Status Kehadiran (Batas jam 08:00)
-    var now = new Date();
-    var jam = now.getHours();
-    var menit = now.getMinutes();
-    var statusAbsen = "HADIR";
-    
-    if (jam > 8 || (jam === 8 && menit > 0)) {
-      statusAbsen = "TERLAMBAT";
-    }
-
-    var tanggal = Utilities.formatDate(now, "Asia/Jakarta", "dd-MM-yyyy");
-    var waktuStr = Utilities.formatDate(now, "Asia/Jakarta", "HH:mm:ss");
-
-    // 1. Simpan Rekap ke Google Sheets (Sheet: REKAP_ABSEN)
-    var sheetAbsen = ss.getSheetByName("REKAP_ABSEN");
-    if (!sheetAbsen) {
-      sheetAbsen = ss.insertSheet("REKAP_ABSEN");
-      sheetAbsen.appendRow(["Tanggal", "Waktu", "ID Siswa", "Nama", "Kelas", "Status"]);
-    }
-    sheetAbsen.appendRow([tanggal, waktuStr, idSiswa, namaSiswa, kelasSiswa, statusAbsen]);
-
-    // 2. Kirim Notifikasi ke Telegram
-    if (chatId) {
-      var pesan = "📢 *PEMBERITAHUAN ABSENSI LAB*\n\n" +
-                  "Yth. Orang Tua/Wali dari:\n" +
-                  "👤 *" + namaSiswa + "* (" + kelasSiswa + ")\n\n" +
-                  "Status Kehadiran: *" + statusAbsen + "*\n" +
-                  "🕒 Waktu: " + waktuStr + " WIB\n" +
-                  "📍 Lokasi: Lab Komputer";
-      
-      sendTelegramMessage(chatId, pesan);
-    }
-
-  } catch (err) {
-    console.error("Error doPost: " + err.toString());
-  }
-
-  return ContentService.createTextOutput("OK");
-}
-
-function sendTelegramMessage(chatId, text) {
-  var url = "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMessage";
-  var payload = {
-    method: "post",
-    payload: {
-      chat_id: chatId,
-      text: text,
-      parse_mode: "Markdown"
-    }
-  };
-  try {
-    UrlFetchApp.fetch(url, payload);
-  } catch (e) {
-    console.error("Gagal kirim Telegram: " + e.toString());
-  }
-}
 
 /**
  * ==========================================
@@ -613,32 +528,94 @@ function kirimPesanTelegram(chatId, pesan) {
     Logger.log("Gagal mengirim Telegram: " + error.message);
   }
 }
+var TELEGRAM_TOKEN = "8543899140:AAF_OFSBRIqZrprclYDyC7AHzItvU8adQdo";
+
 function doGet(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheetSiswa = ss.getSheetByName("DATA_SISWA");
   
-  // Jika diakses dari web scanner dengan parameter ?id=LAB041
   if (e && e.parameter && e.parameter.id) {
-    var searchId = e.parameter.id.toString().trim().toUpperCase();
+    var rawData = e.parameter.id.toString().trim();
+    var idSiswa = rawData.split("|")[0].trim().toUpperCase(); // Ambil ID utamanya saja (misal LAB041)
+    
     var data = sheetSiswa.getDataRange().getValues();
     var result = { status: "not_found" };
     
     for (var i = 1; i < data.length; i++) {
-      var idSiswa = data[i][0] ? data[i][0].toString().trim().toUpperCase() : ""; // Kolom A: ID Siswa
-      if (idSiswa === searchId) {
+      var idDb = data[i][0] ? data[i][0].toString().trim().toUpperCase() : "";
+      if (idDb === idSiswa) {
+        var namaSiswa = data[i][1] || "Siswa";   // Kolom B: Nama
+        var kelasSiswa = data[i][2] || "-";       // Kolom C: Kelas
+        var chatId = data[i][7] || "";           // Kolom H: Telegram Chat ID
+        
+        // Tentukan Waktu & Status Kehadiran (Batas jam 08:00)
+        var now = new Date();
+        var jam = now.getHours();
+        var menit = now.getMinutes();
+        var statusAbsen = "HADIR";
+        
+        if (jam > 8 || (jam === 8 && menit > 0)) {
+          statusAbsen = "TERLAMBAT";
+        }
+        
+        var tanggal = Utilities.formatDate(now, "Asia/Jakarta", "dd-MM-yyyy");
+        var waktuStr = Utilities.formatDate(now, "Asia/Jakarta", "HH:mm:ss");
+
+        // 1. Simpan Rekap ke Google Sheets (Sheet: REKAP_ABSEN)
+        try {
+          var sheetAbsen = ss.getSheetByName("REKAP_ABSEN");
+          if (!sheetAbsen) {
+            sheetAbsen = ss.insertSheet("REKAP_ABSEN");
+            sheetAbsen.appendRow(["Tanggal", "Waktu", "ID Siswa", "Nama", "Kelas", "Status"]);
+          }
+          sheetAbsen.appendRow([tanggal, waktuStr, idSiswa, namaSiswa, kelasSiswa, statusAbsen]);
+        } catch (err) {
+          console.error("Gagal simpan sheet: " + err.toString());
+        }
+
+        // 2. Kirim Notifikasi ke Telegram
+        if (chatId) {
+          var pesan = "📢 *PEMBERITAHUAN ABSENSI LAB*\n\n" +
+                      "Yth. Orang Tua/Wali dari:\n" +
+                      "👤 *" + namaSiswa + "* (" + kelasSiswa + ")\n\n" +
+                      "Status Kehadiran: *" + statusAbsen + "*\n" +
+                      "🕒 Waktu: " + waktuStr + " WIB\n" +
+                      "📍 Lokasi: Lab Komputer";
+          
+          sendTelegramMessage(chatId, pesan);
+        }
+
+        // 3. Kirim balik data ke Web Scanner agar nama siswa muncul di layar
         result = {
           status: "success",
-          id: data[i][0],
-          nama: data[i][1] || "Siswa",   // Sesuaikan dengan kolom Nama di Spreadsheet Anda
-          kelas: data[i][2] || "X TKJ"  // Sesuaikan dengan kolom Kelas/Jurusan di Spreadsheet Anda
+          nama: namaSiswa,
+          kelas: kelasSiswa,
+          absenStatus: statusAbsen
         };
         break;
       }
     }
+    
     return ContentService.createTextOutput(JSON.stringify(result))
                          .setMimeType(ContentService.MimeType.JSON);
   }
   
-  // Default response untuk webhook Telegram
   return ContentService.createTextOutput("Bot Active");
+}
+
+function sendTelegramMessage(chatId, text) {
+  var url = "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMessage";
+  var payload = {
+    method: "post",
+    payload: {
+      chat_id: chatId,
+      text: text,
+      parse_mode: "Markdown"
+    }
+  };
+  try {
+    UrlFetchApp.fetch(url, payload);
+  } catch (e) {
+    console.error("Gagal kirim Telegram: " + e.toString());
+  }
 }
