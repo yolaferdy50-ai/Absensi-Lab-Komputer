@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absensi Lab Komputer - SMK Islam Inayah Ujungbatu</title>
+    <title>Absensi Lab Komputer</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background: #0f172a;
             color: #f8fafc;
             margin: 0;
@@ -15,7 +15,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
         }
         .container {
             width: 100%;
@@ -76,8 +75,8 @@
         <button id="toggleBtn" class="btn btn-primary" onclick="toggleCamera()">Mulai Kamera Scanner</button>
 
         <div id="resultCard" class="result-card">
-            <h3 id="resName">BERHASIL</h3>
-            <p id="resDetails">Data berhasil dikirim ke sistem.</p>
+            <h3 id="resName">ABSEN BERHASIL!</h3>
+            <p id="resDetails">Data tersimpan di sistem.</p>
             <p id="resTime" style="font-family: monospace; font-size: 12px; margin-top: 8px;"></p>
         </div>
     </div>
@@ -91,8 +90,8 @@
         
         let scanning = false;
         let streamActive = null;
+        let isProcessing = false; // Flag cegah ganda scan
 
-        // URL Web App Google Apps Script Anda (pastikan endpoint doPost aktif)
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzcNu-XdFsz5G9lR5zXY5Z_ABSYTlSbj6VUY_i4Utm0FEGL0zEZjlxp1ZjJ415qCyHC/exec";
 
         function toggleCamera() {
@@ -130,36 +129,29 @@
                 var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
                 var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
 
-                if (code) {
+                if (code && !isProcessing) {
+                    isProcessing = true;
                     handleScanResult(code.data);
-                    stopCamera();
-                    setTimeout(startCamera, 4000); // Jeda 4 detik sebelum scan berikutnya
+                    
+                    // Jeda 3 detik untuk scan siswa berikutnya
+                    setTimeout(() => { isProcessing = false; }, 3000);
                 }
             }
             requestAnimationFrame(tick);
         }
 
-        async function handleScanResult(dataText) {
+        function handleScanResult(dataText) {
             let now = new Date();
             let timeString = now.toLocaleTimeString('id-ID');
 
-            // Tampilan instan di web
-            document.getElementById("resName").innerText = "QR TERBACA!";
-            document.getElementById("resDetails").innerText = "Isi: " + dataText;
+            // 1. Tampilkan Hasil di Layar SANGAT CEPAT (Instan Tanpa Nunggu Server)
+            document.getElementById("resName").innerText = "ABSEN BERHASIL!";
+            document.getElementById("resDetails").innerText = "ID / Data: " + dataText;
             document.getElementById("resTime").innerText = "Waktu: " + timeString;
             resultCard.style.display = "block";
 
-            // Kirim data hasil scan ke Apps Script untuk dicatat ke Spreadsheet & Telegram
-            try {
-                await fetch(APPS_SCRIPT_URL, {
-                    method: "POST",
-                    mode: "no-cors",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ qrData: dataText })
-                });
-            } catch (error) {
-                console.error("Gagal mengirim data:", error);
-            }
+            // 2. Kirim Data ke Google Sheets & Telegram di Latar Belakang (Non-blocking)
+            navigator.sendBeacon(APPS_SCRIPT_URL, JSON.stringify({ qrData: dataText }));
         }
     </script>
 </body>
