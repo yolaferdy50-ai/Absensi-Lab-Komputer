@@ -60,7 +60,7 @@
       background: linear-gradient(135deg, #3182ce, #2b6cb0);
       color: white;
       border: none;
-      padding: 14px;
+      padding: 14px 18px;
       font-size: 15px;
       font-weight: 600;
       border-radius: 8px;
@@ -69,6 +69,7 @@
       justify-content: space-between;
       align-items: center;
       box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+      transition: all 0.2s ease;
     }
     .dropdown-content {
       display: none;
@@ -77,6 +78,7 @@
       background: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
     .unabsent-header {
       display: flex;
@@ -85,20 +87,24 @@
       margin-bottom: 10px;
       font-size: 12px;
       color: #718096;
+      border-bottom: 1px solid #edf2f7;
+      padding-bottom: 6px;
     }
     .btn-refresh {
       background: #edf2f7;
+      color: #4a5568;
       border: none;
-      padding: 4px 8px;
+      padding: 4px 10px;
       border-radius: 4px;
       cursor: pointer;
       font-size: 12px;
+      font-weight: 600;
     }
     .unabsent-list {
       list-style: none;
       padding: 0;
       margin: 0;
-      max-height: 220px;
+      max-height: 240px;
       overflow-y: auto;
     }
     .unabsent-item {
@@ -113,18 +119,21 @@
       background: #3182ce;
       color: white;
       border: none;
-      padding: 5px 10px;
+      padding: 5px 12px;
       border-radius: 4px;
       font-size: 12px;
+      font-weight: 600;
       cursor: pointer;
+      margin-right: 4px;
     }
     .btn-izin {
       background: #dd6b20;
       color: white;
       border: none;
-      padding: 5px 10px;
+      padding: 5px 12px;
       border-radius: 4px;
       font-size: 12px;
+      font-weight: 600;
       cursor: pointer;
     }
   </style>
@@ -134,13 +143,13 @@
 <div class="container">
   <h2>📷 Scan QR Code Absensi</h2>
   
-  <!-- KOTA KAMERA SCANNER -->
+  <!-- KAMERA SCANNER -->
   <div id="reader"></div>
 
-  <!-- HASIL POPUP SCAN -->
+  <!-- POPUP RESULT -->
   <div id="result-box"></div>
 
-  <!-- BAGIAN TOMBOL SISWA BELUM ABSEN -->
+  <!-- TOMBOL DAFTAR SISWA BELUM ABSEN -->
   <div class="unabsent-section">
     <button id="btn-toggle-unabsent" class="btn-toggle" onclick="toggleUnabsentList()">
       <span>📋 SISWA BELUM ABSEN</span>
@@ -153,20 +162,20 @@
         <button class="btn-refresh" onclick="loadUnabsentList()">🔄 Refresh</button>
       </div>
       <ul id="list-unabsent" class="unabsent-list">
-        <li style="text-align: center; color: #a0aec0; padding: 8px;">Klik tombol untuk memuat data.</li>
+        <li style="text-align: center; color: #a0aec0; padding: 8px;">Klik tombol di atas untuk memuat data.</li>
       </ul>
     </div>
   </div>
 </div>
 
 <script>
-  // MASUKKAN URL EXEC GOOGLE APPS SCRIPT ANDA DI SINI
+  // GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
   var WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwnXgnpXaDaRYAJs0jWj2RwI6mLAFVuuGWSrYR-6z6zqWM_bedpKe83B2qoElHEobvl/exec"; 
 
   var isProcessing = false;
-  var currentClass = "X TKR"; // Default kelas yang dapat diperbarui dari hasil scan
+  var currentClass = "X TKR"; // Default kelas yang akan disesuaikan otomatis saat scan
 
-  // 1. INISIALISASI CAMERA SCANNER
+  // 1. KAMERA & PROSES SCAN QR CODE
   function onScanSuccess(decodedText, decodedResult) {
     if (isProcessing) return;
     isProcessing = true;
@@ -191,14 +200,17 @@
             resultBox.className = "warning";
             resultBox.innerHTML = "ℹ️ " + data.nama + "<br>" + data.absenStatus;
           }
+
+          // OTOMATIS REFRESH DAFTAR BELUM ABSEN JIKA PANEL SEDANG DIBUKA
+          if (document.getElementById("content-unabsent").style.display === "block") {
+            loadUnabsentList();
+          }
         } else {
           resultBox.className = "error";
           resultBox.innerHTML = "❌ " + (data.message || "Data tidak ditemukan");
         }
         
-        setTimeout(() => {
-          isProcessing = false;
-        }, 3000);
+        setTimeout(() => { isProcessing = false; }, 3000);
       })
       .catch(err => {
         resultBox.className = "error";
@@ -211,7 +223,7 @@
     "reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false);
   html5QrcodeScanner.render(onScanSuccess);
 
-  // 2. LOGIKA MENU SISWA BELUM ABSEN
+  // 2. TOGGLE DROPDOWN & AMBIL DATA BELUM ABSEN
   function toggleUnabsentList() {
     var content = document.getElementById("content-unabsent");
     var arrow = document.getElementById("arrow-icon");
@@ -247,7 +259,7 @@
             listUl.appendChild(li);
           });
         } else {
-          listUl.innerHTML = "<li style='text-align:center; color:#38a169; padding:8px;'>🎉 Semua siswa sudah absen!</li>";
+          listUl.innerHTML = "<li style='text-align:center; color:#38a169; padding:8px; font-weight:600;'>🎉 Semua siswa sudah absen!</li>";
         }
       })
       .catch(err => {
@@ -255,6 +267,7 @@
       });
   }
 
+  // 3. SIMPAN MANUAL SAKIT / IZIN
   function markStatus(idSiswa, status, kelas) {
     fetch(WEB_APP_URL + "?action=input_manual&id_siswa=" + idSiswa + "&status=" + status + "&kelas=" + encodeURIComponent(kelas))
       .then(res => res.json())
