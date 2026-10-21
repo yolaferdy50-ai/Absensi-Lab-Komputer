@@ -169,11 +169,10 @@
 </div>
 
 <script>
-  // URL WEB APP APPS SCRIPT ANDA
   var WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwnXgnpXaDaRYAJs0jWj2RwI6mLAFVuuGWSrYR-6z6zqWM_bedpKe83B2qoElHEobvl/exec"; 
 
   var isProcessing = false;
-  var currentClass = "X TKR"; // Default kelas yang akan disesuaikan otomatis saat scan
+  var currentClass = "X TKR";
 
   // 1. KAMERA & PROSES SCAN QR CODE
   function onScanSuccess(decodedText, decodedResult) {
@@ -201,7 +200,6 @@
             resultBox.innerHTML = "ℹ️ " + data.nama + "<br>" + data.absenStatus;
           }
 
-          // OTOMATIS REFRESH DAFTAR BELUM ABSEN JIKA PANEL SEDANG DIBUKA
           if (document.getElementById("content-unabsent").style.display === "block") {
             loadUnabsentList();
           }
@@ -246,20 +244,32 @@
       .then(res => res.json())
       .then(data => {
         listUl.innerHTML = "";
-        if (data.status === "success" && data.unabsent && data.unabsent.length > 0) {
-          data.unabsent.forEach(siswa => {
-            var li = document.createElement("li");
-            li.className = "unabsent-item";
-            li.innerHTML = `
-              <span><b>${siswa.nama}</b></span>
-              <div>
-                <button class="btn-sakit" onclick="markStatus('${siswa.id}', 'SAKIT', '${siswa.kelas}')">Sakit</button>
-                <button class="btn-izin" onclick="markStatus('${siswa.id}', 'IZIN', '${siswa.kelas}')">Izin</button>
-              </div>`;
-            listUl.appendChild(li);
-          });
+        
+        if (data.status === "success") {
+          // KONDISI A: TIDAK ADA JADWAL AKTIF
+          if (data.hasSchedule === false) {
+            listUl.innerHTML = "<li style='text-align:center; color:#742a2a; padding:8px; font-weight:600;'>ℹ️ Tidak ada jadwal pembelajaran yang aktif saat ini</li>";
+          } 
+          // KONDISI B: ADA JADWAL & ADA SISWA BELUM ABSEN
+          else if (data.unabsent && data.unabsent.length > 0) {
+            data.unabsent.forEach(siswa => {
+              var li = document.createElement("li");
+              li.className = "unabsent-item";
+              li.innerHTML = `
+                <span><b>${siswa.nama}</b></span>
+                <div>
+                  <button class="btn-sakit" onclick="markStatus('${siswa.id}', 'SAKIT', '${siswa.kelas}')">Sakit</button>
+                  <button class="btn-izin" onclick="markStatus('${siswa.id}', 'IZIN', '${siswa.kelas}')">Izin</button>
+                </div>`;
+              listUl.appendChild(li);
+            });
+          } 
+          // KONDISI C: ADA JADWAL & SEMUA SISWA SUDAH ABSEN
+          else {
+            listUl.innerHTML = "<li style='text-align:center; color:#38a169; padding:8px; font-weight:600;'>🎉 Semua siswa sudah melakukan absensi!</li>";
+          }
         } else {
-          listUl.innerHTML = "<li style='text-align:center; color:#718096; padding:8px; font-weight:600;'>ℹ️ Tidak ada jadwal aktif atau semua siswa sudah absen.</li>";
+          listUl.innerHTML = "<li style='text-align:center; color:#e53e3e; padding:8px;'>Gagal memuat data.</li>";
         }
       })
       .catch(err => {
