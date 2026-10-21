@@ -169,7 +169,7 @@
 </div>
 
 <script>
-  // GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
+  // URL WEB APP APPS SCRIPT ANDA
   var WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwnXgnpXaDaRYAJs0jWj2RwI6mLAFVuuGWSrYR-6z6zqWM_bedpKe83B2qoElHEobvl/exec"; 
 
   var isProcessing = false;
@@ -259,7 +259,7 @@
             listUl.appendChild(li);
           });
         } else {
-          listUl.innerHTML = "<li style='text-align:center; color:#38a169; padding:8px; font-weight:600;'>🎉 Semua siswa sudah absen!</li>";
+          listUl.innerHTML = "<li style='text-align:center; color:#718096; padding:8px; font-weight:600;'>ℹ️ Tidak ada jadwal aktif atau semua siswa sudah absen.</li>";
         }
       })
       .catch(err => {
