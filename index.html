@@ -1,144 +1,272 @@
-<!-- Kontainer Utama Tombol Siswa Belum Absen -->
-<div style="margin: 20px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Absensi Lab Komputer</title>
+  <!-- Library HTML5 QR Code Scanner -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 15px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      max-width: 480px;
+      width: 100%;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 20px;
+    }
+    #reader {
+      width: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid #e2e8f0;
+    }
+    #result-box {
+      margin-top: 15px;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 600;
+      display: none;
+    }
+    .success { background-color: #c6f6d5; color: #22543d; border: 1px solid #9ae6b4; }
+    .warning { background-color: #feebc8; color: #742a2a; border: 1px solid #fbd38d; }
+    .error { background-color: #fed7d7; color: #9b2c2c; border: 1px solid #feb2b2; }
+    
+    /* Style Tombol Siswa Belum Absen */
+    .unabsent-section {
+      margin-top: 20px;
+    }
+    .btn-toggle {
+      width: 100%;
+      background: linear-gradient(135deg, #3182ce, #2b6cb0);
+      color: white;
+      border: none;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    }
+    .dropdown-content {
+      display: none;
+      margin-top: 10px;
+      padding: 12px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+    }
+    .unabsent-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: #718096;
+    }
+    .btn-refresh {
+      background: #edf2f7;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .unabsent-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .unabsent-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #f7fafc;
+      font-size: 14px;
+    }
+    .btn-sakit {
+      background: #3182ce;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .btn-izin {
+      background: #dd6b20;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>📷 Scan QR Code Absensi</h2>
   
-  <!-- Tombol Utama yang Tampak Pertama Kali -->
-  <button id="btn-toggle-unabsent" onclick="toggleUnabsentList()" style="
-    width: 100%; 
-    background: linear-gradient(135deg, #3182ce, #2b6cb0); 
-    color: white; 
-    border: none; 
-    padding: 14px 20px; 
-    font-size: 16px; 
-    font-weight: 600; 
-    border-radius: 10px; 
-    cursor: pointer; 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;">
-    
-    <span style="display: flex; align-items: center; gap: 8px;">
-      📋 <span>SISWA BELUM ABSEN</span>
-    </span>
-    <span id="arrow-icon" style="font-size: 14px;">▼</span>
-  </button>
+  <!-- KOTA KAMERA SCANNER -->
+  <div id="reader"></div>
 
-  <!-- Panel Pop-up / Dropdown Daftar Nama (Sembunyi Secara Default) -->
-  <div id="content-unabsent" style="
-    display: none; 
-    margin-top: 10px; 
-    padding: 16px; 
-    background: #ffffff; 
-    border: 1px solid #e2e8f0; 
-    border-radius: 10px; 
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);">
-    
-    <!-- Baris Judul & Tombol Segarkan Data -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px;">
-      <span style="font-size: 13px; color: #718096; font-weight: 500;">Pilih status jika siswa berhalangan:</span>
-      <button onclick="loadUnabsentList()" style="
-        background: #edf2f7; 
-        color: #4a5568; 
-        border: none; 
-        padding: 6px 12px; 
-        border-radius: 6px; 
-        cursor: pointer; 
-        font-size: 12px; 
-        font-weight: 600;">🔄 Refresh</button>
+  <!-- HASIL POPUP SCAN -->
+  <div id="result-box"></div>
+
+  <!-- BAGIAN TOMBOL SISWA BELUM ABSEN -->
+  <div class="unabsent-section">
+    <button id="btn-toggle-unabsent" class="btn-toggle" onclick="toggleUnabsentList()">
+      <span>📋 SISWA BELUM ABSEN</span>
+      <span id="arrow-icon">▼</span>
+    </button>
+
+    <div id="content-unabsent" class="dropdown-content">
+      <div class="unabsent-header">
+        <span>Tandai siswa berhalangan:</span>
+        <button class="btn-refresh" onclick="loadUnabsentList()">🔄 Refresh</button>
+      </div>
+      <ul id="list-unabsent" class="unabsent-list">
+        <li style="text-align: center; color: #a0aec0; padding: 8px;">Klik tombol untuk memuat data.</li>
+      </ul>
     </div>
-    
-    <!-- Daftar Nama Siswa -->
-    <ul id="list-unabsent" style="list-style: none; padding: 0; margin: 0; max-height: 280px; overflow-y: auto;">
-      <li style="color: #a0aec0; text-align: center; padding: 12px; font-size: 14px;">Memuat data...</li>
-    </ul>
   </div>
-
 </div>
 
 <script>
-  // URL Web App Google Apps Script Anda (Sesuai dengan Deployment)
-  var webAppUrl = "https://script.google.com/macros/s/AKfycbwnXgnpXaDaRYAJs0jWj2RwI6mLAFVuuGWSrYR-6z6zqWM_bedpKe83B2qoElHEobvl/exec"; 
+  // MASUKKAN URL EXEC GOOGLE APPS SCRIPT ANDA DI SINI
+  var WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwnXgnpXaDaRYAJs0jWj2RwI6mLAFVuuGWSrYR-6z6zqWM_bedpKe83B2qoElHEobvl/exec"; 
 
-  // Fungsi untuk buka / tutup panel tombol
+  var isProcessing = false;
+  var currentClass = "X TKR"; // Default kelas yang dapat diperbarui dari hasil scan
+
+  // 1. INISIALISASI CAMERA SCANNER
+  function onScanSuccess(decodedText, decodedResult) {
+    if (isProcessing) return;
+    isProcessing = true;
+
+    var resultBox = document.getElementById("result-box");
+    resultBox.style.display = "block";
+    resultBox.className = "warning";
+    resultBox.innerHTML = "⏳ Memproses data...";
+
+    fetch(WEB_APP_URL + "?id=" + encodeURIComponent(decodedText))
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "success") {
+          currentClass = data.kelas || currentClass;
+          if (data.absenStatus === "HADIR") {
+            resultBox.className = "success";
+            resultBox.innerHTML = "✅ " + data.nama + " (" + data.kelas + ")<br>Status: HADIR";
+          } else if (data.absenStatus === "TERLAMBAT") {
+            resultBox.className = "warning";
+            resultBox.innerHTML = "⚠️ " + data.nama + " (" + data.kelas + ")<br>Status: TERLAMBAT";
+          } else {
+            resultBox.className = "warning";
+            resultBox.innerHTML = "ℹ️ " + data.nama + "<br>" + data.absenStatus;
+          }
+        } else {
+          resultBox.className = "error";
+          resultBox.innerHTML = "❌ " + (data.message || "Data tidak ditemukan");
+        }
+        
+        setTimeout(() => {
+          isProcessing = false;
+        }, 3000);
+      })
+      .catch(err => {
+        resultBox.className = "error";
+        resultBox.innerHTML = "❌ Gagal terhubung ke server.";
+        setTimeout(() => { isProcessing = false; }, 3000);
+      });
+  }
+
+  var html5QrcodeScanner = new Html5QrcodeScanner(
+    "reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false);
+  html5QrcodeScanner.render(onScanSuccess);
+
+  // 2. LOGIKA MENU SISWA BELUM ABSEN
   function toggleUnabsentList() {
     var content = document.getElementById("content-unabsent");
     var arrow = document.getElementById("arrow-icon");
-    var btn = document.getElementById("btn-toggle-unabsent");
     
     if (content.style.display === "none" || content.style.display === "") {
       content.style.display = "block";
       arrow.textContent = "▲";
-      btn.style.background = "linear-gradient(135deg, #2b6cb0, #1a365d)";
-      loadUnabsentList(); // Muat data otomatis saat tombol diklik
+      loadUnabsentList();
     } else {
       content.style.display = "none";
       arrow.textContent = "▼";
-      btn.style.background = "linear-gradient(135deg, #3182ce, #2b6cb0)";
     }
   }
 
-  // Fungsi mengambil daftar nama siswa yang belum scan dari Google Apps Script
   function loadUnabsentList() {
-    var kelasAktif = "X TKR"; // Bisa dibuat dinamis atau diambil dari parameter kelas jadwal
     var listUl = document.getElementById("list-unabsent");
-    listUl.innerHTML = "<li style='color: #a0aec0; text-align: center; padding: 12px; font-size: 14px;'>Memuat data siswa...</li>";
+    listUl.innerHTML = "<li style='text-align:center; color:#a0aec0; padding:8px;'>Memuat data...</li>";
 
-    fetch(webAppUrl + "?action=get_unabsent&kelas=" + encodeURIComponent(kelasAktif))
+    fetch(WEB_APP_URL + "?action=get_unabsent&kelas=" + encodeURIComponent(currentClass))
       .then(res => res.json())
       .then(data => {
         listUl.innerHTML = "";
         if (data.status === "success" && data.unabsent && data.unabsent.length > 0) {
           data.unabsent.forEach(siswa => {
             var li = document.createElement("li");
-            li.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f7fafc;";
-            
+            li.className = "unabsent-item";
             li.innerHTML = `
-              <span style="font-size: 14px; color: #2d3748; font-weight: 600;">${siswa.nama}</span>
-              <div style="display: flex; gap: 6px;">
-                <button onclick="markStatus('${siswa.id}', 'SAKIT', '${siswa.kelas}')" style="
-                  background: #3182ce; 
-                  color: white; 
-                  border: none; 
-                  padding: 6px 12px; 
-                  border-radius: 6px; 
-                  font-size: 12px; 
-                  font-weight: 600; 
-                  cursor: pointer; 
-                  box-shadow: 0 2px 4px rgba(49, 130, 206, 0.3);">Sakit</button>
-                
-                <button onclick="markStatus('${siswa.id}', 'IZIN', '${siswa.kelas}')" style="
-                  background: #dd6b20; 
-                  color: white; 
-                  border: none; 
-                  padding: 6px 12px; 
-                  border-radius: 6px; 
-                  font-size: 12px; 
-                  font-weight: 600; 
-                  cursor: pointer; 
-                  box-shadow: 0 2px 4px rgba(221, 107, 32, 0.3);">Izin</button>
+              <span><b>${siswa.nama}</b></span>
+              <div>
+                <button class="btn-sakit" onclick="markStatus('${siswa.id}', 'SAKIT', '${siswa.kelas}')">Sakit</button>
+                <button class="btn-izin" onclick="markStatus('${siswa.id}', 'IZIN', '${siswa.kelas}')">Izin</button>
               </div>`;
             listUl.appendChild(li);
           });
         } else {
-          listUl.innerHTML = "<li style='color: #38a169; text-align: center; padding: 12px; font-weight: 600; font-size: 14px;'>🎉 Semua siswa sudah absen!</li>";
+          listUl.innerHTML = "<li style='text-align:center; color:#38a169; padding:8px;'>🎉 Semua siswa sudah absen!</li>";
         }
       })
       .catch(err => {
-        listUl.innerHTML = "<li style='color: #e53e3e; text-align: center; padding: 12px; font-size: 14px;'>Gagal memuat data. Periksa jaringan.</li>";
+        listUl.innerHTML = "<li style='text-align:center; color:#e53e3e; padding:8px;'>Gagal memuat data.</li>";
       });
   }
 
-  // Fungsi mengirim status Sakit / Izin langsung ke Google Sheets
   function markStatus(idSiswa, status, kelas) {
-    fetch(webAppUrl + "?action=input_manual&id_siswa=" + idSiswa + "&status=" + status + "&kelas=" + encodeURIComponent(kelas))
+    fetch(WEB_APP_URL + "?action=input_manual&id_siswa=" + idSiswa + "&status=" + status + "&kelas=" + encodeURIComponent(kelas))
       .then(res => res.json())
       .then(data => {
         alert(data.message);
-        loadUnabsentList(); // Memperbarui daftar secara otomatis setelah status dipilih
+        loadUnabsentList();
       })
       .catch(err => {
         alert("Gagal menyimpan data.");
       });
   }
 </script>
+
+</body>
+</html>
