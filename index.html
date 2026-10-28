@@ -119,18 +119,29 @@
       background: #3182ce;
       color: white;
       border: none;
-      padding: 5px 12px;
+      padding: 5px 10px;
       border-radius: 4px;
       font-size: 12px;
       font-weight: 600;
       cursor: pointer;
-      margin-right: 4px;
+      margin-right: 2px;
     }
     .btn-izin {
       background: #dd6b20;
       color: white;
       border: none;
-      padding: 5px 12px;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-right: 2px;
+    }
+    .btn-cabut {
+      background: #e53e3e;
+      color: white;
+      border: none;
+      padding: 5px 10px;
       border-radius: 4px;
       font-size: 12px;
       font-weight: 600;
@@ -260,6 +271,7 @@
                 <div>
                   <button class="btn-sakit" onclick="markStatus('${siswa.id}', 'SAKIT', '${siswa.kelas}')">Sakit</button>
                   <button class="btn-izin" onclick="markStatus('${siswa.id}', 'IZIN', '${siswa.kelas}')">Izin</button>
+                  <button class="btn-cabut" onclick="markStatus('${siswa.id}', 'CABUT', '${siswa.kelas}')">Cabut</button>
                 </div>`;
               listUl.appendChild(li);
             });
@@ -277,7 +289,7 @@
       });
   }
 
-  // 3. SIMPAN MANUAL SAKIT / IZIN
+  // 3. SIMPAN MANUAL SAKIT / IZIN / CABUT
   function markStatus(idSiswa, status, kelas) {
     fetch(WEB_APP_URL + "?action=input_manual&id_siswa=" + idSiswa + "&status=" + status + "&kelas=" + encodeURIComponent(kelas))
       .then(res => res.json())
